@@ -23,14 +23,9 @@ int main() {
 	myHeight = 111;				// 自分の身長を設定
 
 	// 自己ステータス管理用のオブジェクトを作成
+	// ※：コンストラクタの呼び出しにより、初期化されることを確認するため、
+	//     コンストラクタ内で値を表示
 	Human asada(myName, myHeight, myWeight);
-
-	// 現在の名前を確認する
-	cout << "名前：" << asada.GetName() << '\n';
-	// 現在の体重を確認する
-	cout << "現在の体重：" << asada.GetWeight() << '\n';
-	// 現在の身長を確認する
-	cout << "現在の身長：" << asada.GetHeight() << '\n';
 
 	// 何キロ太ったかを記録
 	plusWeight = 20;

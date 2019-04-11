@@ -22,6 +22,10 @@ using namespace std;
 Human::Human(const std::string& fullName, int height, int weight)
 				: fullName(fullName), height(height), weight(weight)
 {
+	// コンストラクタの呼び出されることにより、初期化されることを確認する。
+	cout << "名前：" << this->fullName << '\n';
+	cout << "身長：" << this->height << '\n';
+	cout << "体重：" << this->weight << '\n';
 }
 
 //===============================================
