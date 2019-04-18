@@ -1,7 +1,8 @@
 //============================================================================
-// ファイル名  : Date.h
-// 来歴        : 2019/04/16 新規作成 K.Asada
-// 概要        : 日付を管理するクラス（ヘッダ）
+// ファイル名	：Date.h
+// 来歴			：2019/04/16 新規作成 K.Asada
+// 				：2019/04/18 関数追加 K.Asada
+// 概要			：日付を管理するクラス（ヘッダ）
 //============================================================================
 
 #ifndef ___Class_Date
@@ -42,7 +43,10 @@ public:
 	// 概要		：	平年or閏年を判定し、判定結果を返す
 	// 引数		：	int year			判定したい年
 	// 戻り値	：	判定結果
-	static bool JudgeLeapYear(int year);
+	static bool JudgeLeapYear(int year){
+		// 閏年かどうかを求め、判定結果を返却
+		return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
+	}
 
 	// デフォルトコンストラクタ
 	Date();
@@ -55,7 +59,7 @@ public:
 	// 戻り値	：	判定結果
 	bool JudgeLeapYear() const{
 		// 判定関数を呼び出し、結果を返す
-		return JudgeLeapYear();
+		return JudgeLeapYear(this->year);
 	}
 
 	// 関数名	：	GetYear
@@ -160,7 +164,7 @@ public:
 	// 概要		：	1日進める演算子関数（後置増分）
 	// 引数		：	ダミー（処理上では利用しないが、C++の仕様上必要のため）
 	// 戻り値	：	1日後の日付
-	Date operator++();
+	Date operator++(int);
 
 	// 関数名	：	operator--
 	// 概要		：	1日戻す演算子関数（前置減分）
@@ -197,7 +201,7 @@ public:
 	// 引数		：	int addDay		進めたい日数
 	//			：	Date originDay	進める前の日付
 	// 戻り値	：	任意の日数進めた日付
-	friend Date operator+(int addDay, const Date& originDay) const;
+	friend Date operator+(int addDay, const Date& originDay);
 
 	// 関数名	：	operator-
 	// 概要		：	任意の日数戻す演算子関数（減算演算）
@@ -252,6 +256,21 @@ public:
 	// 引数		：	なし
 	// 戻り値	：	日付文字列
 	std::string toStringDay() const;
+
+	// 関数名	：	AdjustMonths
+	// 概要		：	不正な月を正しい月へ調整する関数
+	// 引数		：	int& adjustYear		調整対象の年
+	// 			：	int& adjustMoth	調整対象の月
+	// 戻り値	：	なし
+	void AdjustMonths(int& adjustYear, int& adjustMoth) const;
+
+	// 関数名	：	AdjustDays
+	// 概要		：	不正な日を正しい日へ調整する関数
+	// 引数		：	int& adjustYear		調整対象の年
+	// 			：	int& adjustMoth		調整対象の月
+	// 			：	int& adjustDay		調整対象の日
+	// 戻り値	：	なし
+	void AdjustDays(int& adjustYear, int& adjustMoth, int& adjustDay) const;
 };
 
 // 関数名	：	operator<<
@@ -266,6 +285,6 @@ std::ostream& operator<<(std::ostream& s, const Date& day);
 // 引数		：	istream s		入力ストリーム
 // 			：	const Date day	日付の抽出先
 // 戻り値	：	抽出結果
-std::istream& operator>>(std::istream& s, const Date& day);
+std::istream& operator>>(std::istream& s, Date& day);
 
 #endif
