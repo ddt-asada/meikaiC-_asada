@@ -2,6 +2,7 @@
 // ファイル名	：Date.h
 // 来歴			：2019/04/16 新規作成 K.Asada
 // 				：2019/04/18 関数追加 K.Asada
+// 				：2019/04/23 定数クラス実装に伴う修正 K.Asada
 // 概要			：日付を管理するクラス（ヘッダ）
 //============================================================================
 
@@ -10,6 +11,7 @@
 
 #include <string>
 #include <iostream>
+#include "../header/DateConstant.h"
 
 //============================================================================
 // クラス名	：Date
@@ -51,7 +53,7 @@ public:
 	// デフォルトコンストラクタ
 	Date();
 	// コンストラクタ
-	Date(int year, int month = 1, int day = 1);
+	Date(int year, int month = DateConstant::MIN_MONTH, int day = DateConstant::MIN_DAY);
 
 	// 関数名	：	JudgeLeapYear
 	// 概要		：	平年or閏年を判定し、判定結果を返す

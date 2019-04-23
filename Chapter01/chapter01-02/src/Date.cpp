@@ -1,7 +1,8 @@
 //============================================================================
-// ファイル名	：Date.h
+// ファイル名	：Date.cpp
 // 来歴			：2019/04/16 新規作成 K.Asada
 // 				：2019/04/18 関数追加 K.Asada
+// 				：2019/04/23 関数内部の処理を修正 K.Asada
 // 概要			：日付を管理するクラス（ソース）
 //============================================================================
 
@@ -21,7 +22,7 @@ int Date::dayMax[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 // 戻り値	：	判定後の日数
 int Date::DaysOfYear(int year){
 	// 渡された年度の日数を返す
-	return 365 + JudgeLeapYear(year);
+	return DateConstant::MAX_NORMAL_DAY + int(JudgeLeapYear(year));
 }
 
 // 関数名	：	DaysOfMonth
@@ -30,19 +31,23 @@ int Date::DaysOfYear(int year){
 // 				int month			判定したい月
 // 戻り値	：	判定後の日数
 int Date::DaysOfMonth(int year, int month){
+	int adjustIndex = 1;		// 配列の添え字へ適用するために月を補正するための値
+
 	// 渡された年月の日数を返す
-	return dayMax[month - 1] + (month == 2 && JudgeLeapYear(year));
+	return dayMax[month - adjustIndex] + int(month == DateConstant::MONTH_NUM::FEB && JudgeLeapYear(year));
 }
 
 // デフォルトコンストラクタ
 Date::Date(){
 	time_t currentTime = time(NULL);					// 現在の暦時刻を取得
 	struct tm* localTime = localtime(&currentTime);	// 要素別の時刻に変換
+	int adjustYear = 1900;								// 時間構造体から取得した年を補正するための値
+	int adjustMonth = 1;								// 時間構造体から取得した月を補正するための値
 
 	// 現在年を取得、メンバへセット
-	this->year = localTime->tm_year + 1900;
+	this->year = localTime->tm_year + adjustYear;
 	// 現在月を取得、メンバへセット
-	this->month = localTime->tm_mon + 1;
+	this->month = localTime->tm_mon + adjustMonth;
 	// 現在日を取得、メンバへセット
 	this->day = localTime->tm_mday;
 }
@@ -50,23 +55,23 @@ Date::Date(){
 // コンストラクタ
 Date::Date(int year, int month, int day){
 	// 月が不正だった場合、調整
-	if((month >12) || (month < 1)){
+	if((month > DateConstant::MAX_MONTH) || (month < DateConstant::MIN_MONTH)){
 		// 月を調整
 		AdjustMonths(year, month);
 
 	}
 
 	// 日が不正だった場合、調整
-	if((day > DaysOfMonth(year, month)) || (day < 1)){
+	if((day > DaysOfMonth(year, month)) || (day < DateConstant::MIN_DAY)){
 		// 日を調整
 		AdjustDays(year, month, day);
 
 	}
 
 	// 年が不正の場合、"0年1月1日"で初期化
-	if(year < 0){
+	if(year < DateConstant::MIN_YEAR){
 		// 日付を設定
-		SetYMD(0, 1, 1);
+		SetYMD(DateConstant::MIN_YEAR, DateConstant::MIN_MONTH, DateConstant::MIN_DAY);
 
 	// 負の値以外は正常とし、引数で初期化
 	} else {
@@ -123,7 +128,7 @@ int Date::DayOfYear() const{
 	int days = this->day;	// 年内の経過日数を取得
 
 	// 年内の経過月数日付を求め、取得
-	for(int i = 1; i < this->month; i++) {
+	for(int i = DateConstant::MIN_MONTH; i < this->month; i++) {
 		// 経過日数へ足しこんて行く
 		days += DaysOfMonth(this->year, i);
 	}
@@ -141,11 +146,11 @@ int Date::DayOfWeek() const{
 	int month = this->month;	// 月を取得
 
 	// 曜日を求めるために、月数を補正する
-	if((month == 1) || (month == 2)){
+	if((month == DateConstant::MONTH_NUM::JAN) || (month == DateConstant::MONTH_NUM::FEB)){
 		// 1年分を月へ変換するため、減算
 		year--;
 		// 1年を月へ変換
-		month += 12;
+		month += DateConstant::MAX_MONTH;
 	}
 
 	// 曜日に対応した数字を求め、返却
@@ -157,8 +162,10 @@ int Date::DayOfWeek() const{
 // 引数		：	なし
 // 戻り値	：	1970年1月1日からの経過日数
 Date::operator long() const{
+	int adjustYear = 1970;		// 経過年を補正するための値
+
 	// 1970年1月1日からの経過日数を"long型"へ変換し、返却
-	return *this - Date(1970, 1, 1);
+	return *this - Date(adjustYear, DateConstant::MIN_MONTH, DateConstant::MIN_DAY);
 }
 
 // 関数名	：	operator++
@@ -174,16 +181,16 @@ Date& Date::operator++(){
 	// 月末の場合、補正を行う
 	} else {
 		// 年末の補正を行うため、分岐
-		if(++this->month > 12) {
+		if(++this->month > DateConstant::MAX_MONTH) {
 			// 年末の場合、翌年に繰り上げる
 			this->year++;
 			// 月を年初へ戻す
-			this->month = 1;
+			this->month = DateConstant::MIN_MONTH;
 
 		}
 
 		// 日付を月初へ戻す
-		this->day = 1;
+		this->day = DateConstant::MIN_DAY;
 
 	}
 	// 求めた翌日の日付を返却する
@@ -209,17 +216,17 @@ Date Date::operator++(int){
 // 戻り値	：	1日前の日付
 Date& Date::operator--(){
 	// 月初の補正を行うため、分岐
-	if(this->day > 1) {
+	if(this->day > DateConstant::MIN_DAY) {
 		(this->day)--;
 
 	// 月初の場合、補正
 	} else {
 		// 年初の補正を行うため、分岐
-		if(--(this->month) <= 1) {
+		if(--(this->month) <= DateConstant::MIN_MONTH) {
 			// 年初の場合、前年へ戻す
 			(this->year)--;
 			// 前年の12月へ戻す
-			this->month = 12;
+			this->month = DateConstant::MAX_MONTH;
 
 		}
 
@@ -252,7 +259,7 @@ Date Date::operator--(int){
 // 戻り値	：	任意の日数進めた日付
 Date& Date::operator+= (int increaseDay){
 	// 負の加算に対応
-	if(increaseDay < 0) {
+	if(increaseDay < DateConstant::JUDGE_PLUS_MINUS) {
 		// 減算により負の加算を実現
 		return *this -= -increaseDay;
 
@@ -267,11 +274,11 @@ Date& Date::operator+= (int increaseDay){
 		this->day -= DaysOfMonth(this->year, this->month);
 
 		// 年をまたいだ場合、年月を調整
-		if(++(this->month) > 12){
+		if(++(this->month) > DateConstant::MAX_MONTH){
 			// 年をカウント
 			(this->year)++;
 			// 月を年初へ戻す
-			this->month = 1;
+			this->month = DateConstant::MIN_MONTH;
 
 		}
 	}
@@ -286,20 +293,20 @@ Date& Date::operator+= (int increaseDay){
 // 戻り値	：	任意の日数戻した日付
 Date& Date::operator-= (int decreaseDay){
 	// 負の減算に対応
-	if(decreaseDay < 0){
+	if(decreaseDay < DateConstant::JUDGE_PLUS_MINUS){
 		// 加算により負の減算を実現
 		return *this -= -decreaseDay;
 
 	}
 
 	// 月をまたいだ時に年、月を調整する
-	while(this->day < 1){
+	while(this->day < DateConstant::MIN_DAY){
 		// 年をまたいだ場合、年月を調整
-		if(--(this->month) <1){
+		if(--(this->month) < DateConstant::MIN_MONTH){
 			// 前年へ戻す
 			(this->year)--;
 			// 月を年末へ戻す
-			this->month = 12;
+			this->month = DateConstant::MAX_MONTH;
 
 		}
 	}
@@ -540,27 +547,36 @@ std::string Date::toStringDay() const{
 
 // 関数名	：	AdjustMonths
 // 概要		：	不正な月を正しい月へ調整する関数
-// 引数		：	int& adjustYear	調整対象の年
+// 引数		：	int& adjustYear		調整対象の年
 // 			：	int& adjustMonth	調整対象の月
 // 戻り値	：	なし
 void Date::AdjustMonths(int& adjustYear, int& adjustMonth) const{
+	int calcMonth = 0;			// 計算用の月
+	int calcYear = 0;			// 計算用の年
+
+	// ループ内処理統一のため、事前に計算用の値を取得
+	if(adjustMonth > DateConstant::JUDGE_PLUS_MINUS){
+		// 加算用の年を取得
+		calcYear = DateConstant::MIN_YEAR;
+		// 加算用の月を取得
+		calcMonth = DateConstant::MAX_MONTH;
+
+	// 負の値の場合、減算用の値を取得
+	} else {
+		// 減算用の年を取得
+		calcYear = -(DateConstant::MIN_YEAR);
+		// 減算用の月を取得
+		calcMonth = -(DateConstant::MAX_MONTH);
+
+	}
+
 	// 月の調整を行う
-	while((adjustMonth > 12) || (adjustMonth < 1)){
-		// 正の値の場合、除算で調整する
-		if(adjustMonth > 0) {
-			// 年跨ぎに対する年を調整
-			adjustYear += adjustMonth / 12;
-			// 年跨ぎに対する月を調整
-			adjustMonth %= 12;
+	while((adjustMonth > DateConstant::MAX_MONTH) || (adjustMonth < DateConstant::MIN_MONTH)){
+		// 年を調整
+		adjustYear += calcYear;
+		// 月を調整
+		adjustMonth += calcMonth;
 
-		// 負の値の場合、加減演算で調整（負の除算はエラーになる可能性があるため）
-		} else {
-			// 年跨ぎに対する年を調整
-			adjustYear -=1;
-			// 年跨ぎに対する月を調整
-			adjustMonth += 12;
-
-		}
 	}
 }
 
@@ -571,52 +587,40 @@ void Date::AdjustMonths(int& adjustYear, int& adjustMonth) const{
 // 			：	int& adjustDay		調整対象の日
 // 戻り値	：	なし
 void Date::AdjustDays(int& adjustYear, int& adjustMonth, int& adjustDay) const{
-	int tempDay = DaysOfYear(adjustYear);	// 計算用の日付を格納する変数
+	int tempDay = 0;	// 計算用の日付を格納する変数
+	int calcDay = 0;	// 日付の正負を補正するための変数
+	int calcMonth = 0;	// 月の正負を補正するための変数
 
-	// 年に対する日の調整を行う
-	while((adjustDay > tempDay) || (adjustDay < 1)){
-		// 正の値の場合、減算により調整する
-		if(adjustDay > 0){
-			// 日を調整
-			adjustDay -= tempDay;
-			// 年を調整
-			adjustYear += 1;
+	// 月に不正値が含まれている可能性を考慮し、補正する
+	AdjustMonths(adjustYear, adjustMonth);
+	// 判定のため、月内の日数を取得
+	tempDay = DaysOfMonth(adjustYear, adjustMonth);
 
-		// 負の値の場合、加算により調整する
-		} else {
-			// 日を調整
-			adjustDay += tempDay;
-			// 年を調整
-			adjustYear -= 1;
+	// ループ内の処理を統一するため、補正用の値を取得
+	if(adjustDay > DateConstant::JUDGE_PLUS_MINUS) {
+		// 日付を負にする値を取得（減算のため）
+		calcDay = -1;
+		// 月を正にする値を取得（加算のため）
+		calcMonth = 1;
 
-		}
-		// 次の処理に備え、年内の日数を取得
-		tempDay = DaysOfYear(adjustYear);
+	// 負の場合、日付には加算用、月には減算用の値を取得
+	} else {
+		// 日付を正にする値を取得（加算のため）
+		calcDay = 1;
+		// 月を負にする値を取得（減算のため）
+		calcMonth = -1;
 
 	}
 
-	// 次の処理に備え、月内の日数を取得
-	tempDay = DaysOfMonth(adjustYear, adjustMonth);
 	// 月に対する日の調整を行う
-	while((adjustDay > tempDay) || (adjustDay < 1)){
-		// 正の値の場合、減算により調整する
-		if(adjustDay > 0) {
+	while((adjustDay > tempDay) || (adjustDay < DateConstant::MIN_DAY)){
 			// 日を調整
-			adjustDay -= tempDay;
+			adjustDay = adjustDay + (calcDay * tempDay);
 			// 月を調整
-			adjustMonth += 1;
-
-		// 負の値の場合、加算により調整する
-		} else {
-			// 日を調整
-			adjustDay += tempDay;
-			// 月を調整
-			adjustMonth -= 1;
-
-		}
+			adjustMonth = adjustMonth + (calcMonth * DateConstant::MIN_MONTH);
 
 		// 月が年内の範囲を外れた場合、調整
-		if((adjustMonth > 12) || (adjustMonth < 1)){
+		if((adjustMonth > DateConstant::MAX_MONTH) || (adjustMonth < DateConstant::MIN_MONTH)){
 			// 月の調整を行う関数を呼び出す
 			AdjustMonths(adjustYear, adjustMonth);
 

@@ -17,14 +17,31 @@ using namespace std;
 void DisplayDayInfo(Date dispDate);
 
 int main() {
-	Date successDate = Date(2019, 4, 18);		// 正常な年月日で初期化
-	Date invalideDate = Date(2000, -100, 1000);	// 不正な年月日で初期化
+	int inputYear = 0;		// 入力した年を受けるための変数
+	int inputMonth = 0;		// 入力した月を受けるための変数
+	int inputDay = 0;		// 入力した日を受けるための変数
+	Date inputDate;		// クラスオブジェクト格納用変数
+
+	// 年の入力を促す
+	cout << "年：";
+	// 年の入力を受ける
+	cin >> inputYear;
+
+	// 月の入力を促す
+	cout << "月：";
+	// 月の入力を受ける
+	cin >> inputMonth;
+
+	// 日の入力を促す
+	cout << "日：";
+	// 日の入力を受ける
+	cin >> inputDay;
+
+	// 入力された年月日で初期化
+	inputDate = Date(inputYear, inputMonth, inputDay);
 
 	// 情報を表示
-	DisplayDayInfo(successDate);
-
-	// 不正な年月日でも正常に初期化されるか確認
-	DisplayDayInfo(invalideDate);
+	DisplayDayInfo(inputDate);
 
 	return 0;
 }
